@@ -157,6 +157,7 @@ abstract class PortAbstract
         $this->transactionId = intval($transaction->id);
         $this->amount = intval($transaction->price);
         $this->refId = $transaction->ref_id;
+        return $this;
     }
 
     /**
@@ -305,6 +306,7 @@ abstract class PortAbstract
      */
     protected function buildQuery($url, array $query)
     {
+        $query['_h'] = $this->generateHashString($this->config->get('private_key'), $query['transaction_id']);
         $query = http_build_query($query);
 
         $questionMark = strpos($url, '?');
@@ -313,5 +315,30 @@ abstract class PortAbstract
         else {
             return substr($url, 0, $questionMark + 1).$query."&".substr($url, $questionMark + 1);
         }
+    }
+
+    /**
+     * تولید یک رشته هش شده براساس کلید خصوصی و شناسه تراکنش
+     *
+     * @param string $privateKey
+     * @param int $transactionId
+     * @return string
+     */
+    public static function generateHashString($privateKey, $transactionId)
+    {
+        return md5('pOOlP0rt'.$privateKey.md5($transactionId));
+    }
+
+    /**
+     * بررسی صحت رشته هش
+     *
+     * @param string $privateKey
+     * @param string $hash
+     * @param int $transactionId
+     * @return bool
+     */
+    public static function validateHashString($privateKey, $hash, $transactionId)
+    {
+        return self::generateHashString($privateKey, $transactionId) === $hash;
     }
 }

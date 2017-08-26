@@ -7,6 +7,7 @@ return array(
     // If you want PoolPort not set timezone, just leave it empty
     //--------------------------------
     'timezone' => 'Asia/Tehran',
+    'private_key' => 'PRIVATE_KEY',
 
     //--------------------------------
     // Database configuration

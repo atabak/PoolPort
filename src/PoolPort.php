@@ -46,7 +46,7 @@ class PoolPort
     /**
      * Keep current port driver
      *
-     * @var Mellat|Sadad|Zarinpal|Payline|JahanPay
+     * @var PortAbstract
      */
     protected $portClass;
 
@@ -60,6 +60,7 @@ class PoolPort
     /**
      * @param null|string $port
      * @param null|string $configFile
+     * @throws \Exception
      */
     public function __construct($port = null, $configFile = null)
     {
@@ -67,6 +68,9 @@ class PoolPort
 
         $this->config = new Config($this->configFilePath);
         $this->db = new DataBaseManager($this->config);
+
+        if (!$this->config->get('private_key') || $this->config->get('private_key') === 'PRIVATE_KEY')
+            throw new \Exception('Please set `private_key` in config file');
 
         if (!empty($this->config->get('timezone')))
             date_default_timezone_set($this->config->get('timezone'));
@@ -99,7 +103,7 @@ class PoolPort
     /**
      * Callback
      *
-     * @return $this->portClass
+     * @return PortAbstract
      *
      * @throws InvalidRequestException
      * @throws NotFoundTransactionException
@@ -108,10 +112,14 @@ class PoolPort
      */
     public function verify()
     {
-        if (!isset($_GET['transaction_id']))
+        if (!isset($_GET['transaction_id'], $_GET['_h']))
             throw new InvalidRequestException;
 
         $transactionId = intval($_GET['transaction_id']);
+
+        if (!PortAbstract::validateHashString($this->config->get('private_key'), $_GET['_h'], $transactionId))
+            throw new InvalidRequestException('invalid request');
+
         $transaction = $this->db->find($transactionId);
 
         if (!$transaction)
